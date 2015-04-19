@@ -8,8 +8,11 @@
 
 import Foundation
 import UIKit
+import CoreData
 
-class Photo {
+@objc(Photo)
+
+class Photo: NSManagedObject {
     
     struct Keys {
         static let PhotoID = "id"
@@ -17,11 +20,19 @@ class Photo {
         static let PhotoURL = "url_m"
     }
     
-    var photoID: String
-    var photoTitle: String
-    var photoURL: String
+    @NSManaged var photoID: String
+    @NSManaged var photoTitle: String
+    @NSManaged var photoURL: String
+    @NSManaged var pin: Pin?
     
-    init(dictionary: [String: AnyObject]) {
+    override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
+        super.init(entity: entity, insertIntoManagedObjectContext: context)
+    }
+    
+    init(dictionary: [String: AnyObject], context: NSManagedObjectContext) {
+        
+        let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)!
+        super.init(entity: entity, insertIntoManagedObjectContext: context)
         
         photoID = dictionary[Keys.PhotoID] as! String
         photoTitle = dictionary[Keys.PhotoTitle] as! String

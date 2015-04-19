@@ -8,19 +8,29 @@
 
 import Foundation
 import MapKit
+import CoreData
 
-class Pin {
+@objc(Pin)
+
+class Pin: NSManagedObject {
     
     struct Keys {
         static let Latitude = "latitude"
         static let Longitude = "longitude"
     }
     
-    var latitude: Double
-    var longitude: Double
-    var photos: [Photo] = [Photo]()
+    @NSManaged var latitude: Double
+    @NSManaged var longitude: Double
+    @NSManaged var photos: [Photo]
     
-    init(dictionary: [String: AnyObject]) {
+    override init(entity: NSEntityDescription, insertIntoManagedObjectContext context: NSManagedObjectContext?) {
+        super.init(entity: entity, insertIntoManagedObjectContext: context)
+    }
+    
+    init(dictionary: [String: AnyObject], context: NSManagedObjectContext) {
+        
+        let entity = NSEntityDescription.entityForName("Pin", inManagedObjectContext: context)!
+        super.init(entity: entity, insertIntoManagedObjectContext: context)
         
         latitude = dictionary[Keys.Latitude] as! Double
         longitude = dictionary[Keys.Longitude] as! Double

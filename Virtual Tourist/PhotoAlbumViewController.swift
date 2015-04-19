@@ -19,6 +19,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
     var pin: Pin!
     var currentIndex: NSIndexPath?
     
+    lazy var sharedContext = {
+        CoreDataStackManager.sharedInstance().managedObjectContext!
+    }()
+    
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
@@ -62,9 +66,10 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                 let photosDictionary = dictionary!
                 
                 var photos = photosDictionary.map() { (dictionary: [String: AnyObject]) -> Photo in
-                    let photo = Photo(dictionary: dictionary)
                     
-                    self.pin.photos.append(photo)
+                    let photo = Photo(dictionary: dictionary, context: self.sharedContext)
+                    
+                    photo.pin = self.pin
                     
                     return photo
                 }
@@ -72,6 +77,8 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                 dispatch_async(dispatch_get_main_queue()) {
                     self.collectionView.reloadData()
                 }
+                
+                CoreDataStackManager.sharedInstance().saveContext()
                 
             } else {
                 //Alert view to inform the user getting images failed

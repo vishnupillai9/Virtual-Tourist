@@ -22,6 +22,32 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         return url.URLByAppendingPathComponent("mapRegionArchive").path!
     }
     
+    lazy var sharedContext = {
+        CoreDataStackManager.sharedInstance().managedObjectContext!
+    }()
+    
+    func fetchAllPins() -> [Pin] {
+        let error: NSErrorPointer = nil
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        let results = sharedContext.executeFetchRequest(fetchRequest, error: error)
+        
+        if error != nil {
+            println("Error in fetchAllPins(): \(error)")
+            return [Pin]()
+        }
+        
+        return results as! [Pin]
+    }
+    
+    func addPinsToMap() {
+        for pin in pins {
+            var dropPin = MKPointAnnotation()
+            dropPin.coordinate.latitude = pin.latitude
+            dropPin.coordinate.longitude = pin.longitude
+            mapView.addAnnotation(dropPin)
+        }
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -29,6 +55,12 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         
         //Restoring the state of the map
         restoreMapRegion(true)
+        
+        //Fetching all pins
+        pins = fetchAllPins()
+        
+        //Add them to the map
+        addPinsToMap()
         
         let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: "didLongTapMap:")
         longPressGestureRecognizer.delegate = self
@@ -95,9 +127,11 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
             Pin.Keys.Longitude: touchMapCoordinate.longitude
         ]
         
-        let pinToBeAdded = Pin(dictionary: dictionary)
+        let pinToBeAdded = Pin(dictionary: dictionary, context: self.sharedContext)
         
         pins.append(pinToBeAdded)
+        
+        CoreDataStackManager.sharedInstance().saveContext()
         
         var dropPin = MKPointAnnotation()
         dropPin.coordinate.latitude = pinToBeAdded.latitude
