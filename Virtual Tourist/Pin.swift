@@ -6,7 +6,6 @@
 //  Copyright (c) 2015 Vishnu Pillai. All rights reserved.
 //
 
-import Foundation
 import MapKit
 import CoreData
 

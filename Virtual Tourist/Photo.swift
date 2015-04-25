@@ -6,7 +6,6 @@
 //  Copyright (c) 2015 Vishnu Pillai. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import CoreData
 
@@ -33,7 +32,7 @@ class Photo: NSManagedObject {
         
         let entity = NSEntityDescription.entityForName("Photo", inManagedObjectContext: context)!
         super.init(entity: entity, insertIntoManagedObjectContext: context)
-        
+    
         photoID = dictionary[Keys.PhotoID] as! String
         photoTitle = dictionary[Keys.PhotoTitle] as! String
         photoURL = dictionary[Keys.PhotoURL] as! String
@@ -41,10 +40,10 @@ class Photo: NSManagedObject {
     
     var image: UIImage? {
         get {
-            return FlickrClient.Caches.imageCache.imageWithIdentifier(photoURL)
+            return FlickrClient.Caches.imageCache.imageWithIdentifier(photoID)
         }
         set {
-            FlickrClient.Caches.imageCache.storeImage(image, identifier: photoURL)
+            FlickrClient.Caches.imageCache.storeImage(image, identifier: photoID)
         }
     }
     

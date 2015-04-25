@@ -6,7 +6,6 @@
 //  Copyright (c) 2015 Vishnu Pillai. All rights reserved.
 //
 
-import Foundation
 import MapKit
 
 extension FlickrClient {
@@ -35,6 +34,7 @@ extension FlickrClient {
                 if let photosDictionary = JSONResult.valueForKey(JSONResponseKeys.Photos) as? [String: AnyObject] {
                     if let photos = photosDictionary[JSONResponseKeys.Photo] as? [[String: AnyObject]] {
                         var resultDictionary = [[String: AnyObject]]()
+                        
                         do {
                             let photo = photos[self.count]
                             resultDictionary.append(photo)
@@ -51,5 +51,4 @@ extension FlickrClient {
         }
     }
 
-    
 }

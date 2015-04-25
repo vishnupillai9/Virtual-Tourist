@@ -6,12 +6,13 @@
 //  Copyright (c) 2015 Vishnu Pillai. All rights reserved.
 //
 
-import Foundation
 import UIKit
 
 class ImageCache {
     
     private var inMemoryCache = NSCache()
+    
+    //MARK: - Helper
     
     func pathForIdentifier(identifier: String) -> String {
         
@@ -23,7 +24,7 @@ class ImageCache {
         
     }
     
-    //Retreiving images
+    //MARK: - Retreiving images
     
     func imageWithIdentifier(identifier: String?) -> UIImage? {
         
@@ -51,7 +52,7 @@ class ImageCache {
     
     }
     
-    //Saving images
+    //MARK: - Saving images
     
     func storeImage(image: UIImage?, identifier: String) {
         let path = pathForIdentifier(identifier)
@@ -69,6 +70,19 @@ class ImageCache {
         //Change image representation to PNG and save it to Documents Directory
         let data = UIImagePNGRepresentation(image!)
         data.writeToFile(path, atomically: true)
+    }
+    
+    //MARK: - Clearing images from cache
+    
+    func clearCache() {
+        inMemoryCache.removeAllObjects()
+    }
+    
+    func clearImage(id: String) {
+        inMemoryCache.removeObjectForKey(id)
+        let path = pathForIdentifier(id)
+        println("Image cleared at path: \(path)")
+        NSFileManager.defaultManager().removeItemAtPath(path, error: nil)
     }
     
     

@@ -22,31 +22,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         return url.URLByAppendingPathComponent("mapRegionArchive").path!
     }
     
-    lazy var sharedContext = {
-        CoreDataStackManager.sharedInstance().managedObjectContext!
-    }()
-    
-    func fetchAllPins() -> [Pin] {
-        let error: NSErrorPointer = nil
-        let fetchRequest = NSFetchRequest(entityName: "Pin")
-        let results = sharedContext.executeFetchRequest(fetchRequest, error: error)
-        
-        if error != nil {
-            println("Error in fetchAllPins(): \(error)")
-            return [Pin]()
-        }
-        
-        return results as! [Pin]
-    }
-    
-    func addPinsToMap() {
-        for pin in pins {
-            var dropPin = MKPointAnnotation()
-            dropPin.coordinate.latitude = pin.latitude
-            dropPin.coordinate.longitude = pin.longitude
-            mapView.addAnnotation(dropPin)
-        }
-    }
+    //MARK: - Life Cycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -62,6 +38,7 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         //Add them to the map
         addPinsToMap()
         
+        //Adding long press gesture recognizer
         let longPressGestureRecognizer = UILongPressGestureRecognizer(target: self, action: "didLongTapMap:")
         longPressGestureRecognizer.delegate = self
         longPressGestureRecognizer.numberOfTapsRequired = 0
@@ -70,12 +47,76 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         
     }
     
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
+        //Reload all pins when view appears
+        reloadPins()
+    }
+    
     override func viewDidAppear(animated: Bool) {
-        super.viewDidAppear(true)
+        super.viewDidAppear(animated)
         self.navigationController?.navigationBarHidden = true
     }
     
-    //Persist center and zoom level of map
+    //MARK: - Core Data Convenience
+    
+    lazy var sharedContext = {
+        CoreDataStackManager.sharedInstance().managedObjectContext!
+    }()
+    
+    //Convenience method for fetching all persistent pins
+    func fetchAllPins() -> [Pin] {
+        let error: NSErrorPointer = nil
+        
+        //Create fetch request
+        let fetchRequest = NSFetchRequest(entityName: "Pin")
+        
+        //Execute request
+        let results = sharedContext.executeFetchRequest(fetchRequest, error: error)
+        
+        if error != nil {
+            println("Error in fetchAllPins(): \(error)")
+            return [Pin]()
+        }
+        
+        //Return results, cast to an array of Pin objects
+        return results as! [Pin]
+    }
+    
+    //MARK: - Map View
+    
+    func mapView(mapView: MKMapView!, regionDidChangeAnimated animated: Bool) {
+        //Save the map region whenever region changes
+        saveMapRegion()
+    }
+    
+    func mapView(mapView: MKMapView!, viewForAnnotation annotation: MKAnnotation!) -> MKAnnotationView! {
+        var newAnnotation = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin1")
+        newAnnotation.animatesDrop = true
+        
+        return newAnnotation
+    }
+    
+    func mapView(mapView: MKMapView!, didSelectAnnotationView view: MKAnnotationView!) {
+        let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumViewController") as! PhotoAlbumViewController
+        
+        let pinCount = pins.count
+        var i = 0
+        var index: Int?
+        
+        for i = 0; i < pinCount; i++ {
+            if view.annotation.coordinate.latitude == pins[i].latitude && view.annotation.coordinate.longitude == pins[i].longitude {
+                index = i
+            }
+        }
+        
+        controller.pin = pins[index!]
+        
+        self.navigationController?.pushViewController(controller, animated: true)
+    }
+    
+    //MARK: - Persisting map region
+
     func saveMapRegion() {
         //The center and span is saved in a dictionary and archived using NSKeyedArchiver and stored in the Documents Directory of the app
         let dictionary = [
@@ -85,11 +126,6 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
             "longitudeDelta": mapView.region.span.longitudeDelta
         ]
         NSKeyedArchiver.archiveRootObject(dictionary, toFile: filePath)
-    }
-    
-    func mapView(mapView: MKMapView!, regionDidChangeAnimated animated: Bool) {
-        //Save the map region whenever region changes
-        saveMapRegion()
     }
     
     func restoreMapRegion(animated: Bool) {
@@ -110,13 +146,27 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         }
     }
     
+    //MARK: - Adding pins to map
+    
+    func addPinsToMap() {
+        for pin in pins {
+            var dropPin = MKPointAnnotation()
+            dropPin.coordinate.latitude = pin.latitude
+            dropPin.coordinate.longitude = pin.longitude
+            mapView.addAnnotation(dropPin)
+        }
+    }
+    
+    func reloadPins() {
+        let annotationsToRemove = mapView.annotations.filter { $0 !== self.mapView.userLocation }
+        mapView.removeAnnotations(annotationsToRemove)
+        addPinsToMap()
+    }
+    
     func didLongTapMap(gestureRecognizer: UIGestureRecognizer) {
-        // Get the spot that was tapped.
+        //Get the spot that was tapped.
         let tapPoint: CGPoint = gestureRecognizer.locationInView(mapView)
         let touchMapCoordinate: CLLocationCoordinate2D = mapView.convertPoint(tapPoint, toCoordinateFromView: mapView)
-        
-        println(tapPoint)
-        println(touchMapCoordinate)
         
         if gestureRecognizer.state != .Ended {
             return
@@ -127,46 +177,18 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
             Pin.Keys.Longitude: touchMapCoordinate.longitude
         ]
         
+        //Create the pin to be added
         let pinToBeAdded = Pin(dictionary: dictionary, context: self.sharedContext)
         
-        pins.append(pinToBeAdded)
+        self.pins.append(pinToBeAdded)
         
         CoreDataStackManager.sharedInstance().saveContext()
         
+        //Add the pin to mapView
         var dropPin = MKPointAnnotation()
         dropPin.coordinate.latitude = pinToBeAdded.latitude
         dropPin.coordinate.longitude = pinToBeAdded.longitude
         mapView.addAnnotation(dropPin)
-        
-    }
-    
-    func mapView(mapView: MKMapView!, viewForAnnotation annotation: MKAnnotation!) -> MKAnnotationView! {
-        
-        var newAnnotation = MKPinAnnotationView(annotation: annotation, reuseIdentifier: "Pin1")
-        //newAnnotation.pinColor = MKPinAnnotationColor.Purple
-        newAnnotation.animatesDrop = true
-        
-        return newAnnotation
-        
-    }
-    
-    
-    func mapView(mapView: MKMapView!, didSelectAnnotationView view: MKAnnotationView!) {
-        let controller = self.storyboard!.instantiateViewControllerWithIdentifier("PhotoAlbumViewController") as! PhotoAlbumViewController
-        
-        let pinCount = pins.count
-        var i = 0
-        var index: Int?
-        
-        for i = 0; i < pinCount; i++ {
-            if view.annotation.coordinate.latitude == pins[i].latitude && view.annotation.coordinate.longitude == pins[i].longitude {
-                index = i
-            }
-        }
-        
-        controller.pin = pins[index!]
-        
-        self.navigationController?.pushViewController(controller, animated: true)
     }
 
 }

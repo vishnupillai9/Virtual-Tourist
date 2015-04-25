@@ -6,12 +6,13 @@
 //  Copyright (c) 2015 Vishnu Pillai. All rights reserved.
 //
 
-import Foundation
 import CoreData
 
 private let SQLITE_FILE_NAME = "VirtualTourist.sqlite"
 
 class CoreDataStackManager {
+    
+    //MARK: - Shared Instance
     
     class func sharedInstance() -> CoreDataStackManager {
         struct Static {
@@ -19,6 +20,8 @@ class CoreDataStackManager {
         }
         return Static.instance
     }
+    
+    //MARK: - Core Data stack
     
     lazy var applicationDocumentsDirectory: NSURL = {
         let urls = NSFileManager.defaultManager().URLsForDirectory(.DocumentDirectory, inDomains: .UserDomainMask)
@@ -32,7 +35,6 @@ class CoreDataStackManager {
     }()
     
     lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator? = {
-        
         var coordinator: NSPersistentStoreCoordinator? = NSPersistentStoreCoordinator(managedObjectModel: self.managedObjectModel)
         let url = self.applicationDocumentsDirectory.URLByAppendingPathComponent(SQLITE_FILE_NAME)
         
@@ -52,11 +54,9 @@ class CoreDataStackManager {
         }
         
         return coordinator
-        
     }()
     
     lazy var managedObjectContext: NSManagedObjectContext? = {
-        
         let coordinator = self.persistentStoreCoordinator
         if coordinator == nil {
             return nil
@@ -64,11 +64,11 @@ class CoreDataStackManager {
         var managedObjectContext = NSManagedObjectContext()
         managedObjectContext.persistentStoreCoordinator = coordinator
         return managedObjectContext
-        
     }()
     
+    //MARK: - Core Data saving support
+    
     func saveContext () {
-        
         if let context = self.managedObjectContext {
             
             var error: NSError? = nil

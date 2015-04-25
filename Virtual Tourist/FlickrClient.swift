@@ -18,6 +18,8 @@ class FlickrClient: NSObject {
         super.init()
     }
     
+    //MARK: - All purpose task method for data
+    
     func taskForGETMethod (methodArguments: [String : AnyObject], completionHandler: (result: AnyObject!, error: NSError?) -> Void) -> NSURLSessionDataTask {
         
         //1. Parameters
@@ -45,6 +47,8 @@ class FlickrClient: NSObject {
         return task
     }
     
+    //MARK: - All purpose task method for images
+    
     func taskForImage(filePath: String, completionHandler: (imageData: NSData?, error: NSError?) -> Void) -> NSURLSessionTask {
         
         //1. No parameters
@@ -71,6 +75,8 @@ class FlickrClient: NSObject {
         return task
     }
     
+    //MARK: - Helpers
+    
     class func parseJSONWithCompletionHandler(data: NSData, completionHandler: (result: AnyObject!, error: NSError?) -> Void) {
         
         var parsingError: NSError? = nil
@@ -83,7 +89,6 @@ class FlickrClient: NSObject {
         }
         
     }
-    
     
     // Helper function: Given a dictionary of parameters, convert to a string for a url
     func escapedParameters(parameters: [String : AnyObject]) -> String {
@@ -108,12 +113,16 @@ class FlickrClient: NSObject {
         return (!urlVars.isEmpty ? "?" : "") + join("&", urlVars)
     }
     
+    //MARK: - Shared Instance
+    
     class func sharedInstance() -> FlickrClient {
         struct Singleton {
             static var sharedInstance = FlickrClient()
         }
         return Singleton.sharedInstance
     }
+    
+    //MARK: - Shared Image Cache
     
     struct Caches {
         static let imageCache = ImageCache()
