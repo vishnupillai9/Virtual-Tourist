@@ -50,9 +50,8 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-        //Hide navigation bar and reload all pins when view appears
+        //Hide navigation bar
         self.navigationController?.navigationBarHidden = true
-        reloadPins()
     }
     
     //MARK: - Core Data Convenience
@@ -110,6 +109,8 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         controller.pin = pins[index]
         
         self.navigationController?.pushViewController(controller, animated: true)
+        
+        mapView.deselectAnnotation(view.annotation, animated: true)
     }
     
     //MARK: - Persisting map region
@@ -154,11 +155,11 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, UIG
         }
     }
     
-    func reloadPins() {
+    /*func reloadPins() {
         let annotationsToRemove = mapView.annotations.filter { $0 !== self.mapView.userLocation }
         mapView.removeAnnotations(annotationsToRemove)
         addPinsToMap()
-    }
+    }*/
     
     func didLongTapMap(gestureRecognizer: UIGestureRecognizer) {
         //Get the spot that was tapped.
