@@ -26,7 +26,7 @@ extension FlickrClient {
             ParameterKeys.NoJSONCallBack: Constants.NoJSONCallBack
         ]
         
-        let task = taskForGETMethod(methodArguments) { (JSONResult, error) -> Void in
+        _ = taskForGETMethod(methodArguments) { (JSONResult, error) -> Void in
             
             if let error = error {
                 completionHandler(success: false, dictionary: nil, errorString: "Could not complete the request \(error)")
@@ -35,11 +35,11 @@ extension FlickrClient {
                     if let photos = photosDictionary[JSONResponseKeys.Photo] as? [[String: AnyObject]] {
                         var resultDictionary = [[String: AnyObject]]()
                         
-                        do {
+                        repeat {
                             let photo = photos[self.count]
                             resultDictionary.append(photo)
                             self.count = self.count + 1
-                        } while (self.count % 12 != 0)
+                        } while (self.count % 36 != 0)
                         
                         completionHandler(success: true, dictionary: resultDictionary, errorString: nil)
                         

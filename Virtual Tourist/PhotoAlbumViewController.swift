@@ -29,7 +29,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         FlickrClient.Caches.imageCache.clearCache()
     }
     
-    //MARK: - Life Cycle
+    // MARK: - Life Cycle
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,7 +38,11 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         
         setLocation(pin.latitude, longitude: pin.longitude)
         
-        fetchedResultsController.performFetch(nil)
+        do {
+            try fetchedResultsController.performFetch()
+        } catch _ {
+            print("Error performing fetch")
+        }
         fetchedResultsController.delegate = self
     }
     
@@ -52,7 +56,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }
     }
     
-    //MARK: - Core Data Convenience
+    // MARK: - Core Data Convenience
     
     lazy var sharedContext = {
         CoreDataStackManager.sharedInstance().managedObjectContext!
@@ -69,7 +73,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         return fetchedResultsController
     }()
     
-    //MARK: - Helper 
+    // MARK: - Helper
     
     func setLocation(latitude: CLLocationDegrees, longitude: CLLocationDegrees) {
         let region = MKCoordinateRegion(center: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01))
@@ -91,7 +95,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                 let photosDictionary = dictionary!
                 
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                    var photos = photosDictionary.map() { (dictionary: [String: AnyObject]) -> Photo in
+                    _ = photosDictionary.map() { (dictionary: [String: AnyObject]) -> Photo in
                         let photo = Photo(dictionary: dictionary, context: self.sharedContext)
                         photo.pin = self.pin
                         CoreDataStackManager.sharedInstance().saveContext()
@@ -100,22 +104,22 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
                 })
                 
             } else {
-                //Alert view to inform the user getting images failed
-                var alert = UIAlertController(title: "Failed to get images", message: "Fetching images from Flickr failed", preferredStyle: UIAlertControllerStyle.Alert)
+                // Alert view to inform the user getting images failed
+                let alert = UIAlertController(title: "Failed to get images", message: "Fetching images from Flickr failed", preferredStyle: UIAlertControllerStyle.Alert)
                 alert.addAction(UIAlertAction(title: "Dismiss", style: UIAlertActionStyle.Default, handler: nil))
                 self.presentViewController(alert, animated: true, completion: nil)
             }
         }
     }
     
-    //MARK: - Collection View
+    // MARK: - Collection View
     
     func numberOfSectionsInCollectionView(collectionView: UICollectionView) -> Int {
         return self.fetchedResultsController.sections?.count ?? 0
     }
     
     func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        let sectionInfo = self.fetchedResultsController.sections![section] as! NSFetchedResultsSectionInfo
+        let sectionInfo = self.fetchedResultsController.sections![section] 
         
         return sectionInfo.numberOfObjects
     }
@@ -143,21 +147,21 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         self.presentViewController(alertControllerForDeletingPhoto, animated: true, completion: nil)
     }
     
-    //MARK: - Collection View Delegate Flow Layout
+    // MARK: - Collection View Delegate Flow Layout
     
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAtIndexPath indexPath: NSIndexPath) -> CGSize {
-        //Changing the size of the cell depending on the width of the device
+        // Changing the size of the cell depending on the width of the device
         let imageDimension = self.view.frame.size.width / 3.33
         return CGSizeMake(imageDimension, imageDimension)
     }
     
     func collectionView(collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAtIndex section: Int) -> UIEdgeInsets {
-        //Setting the left and right inset for cells
+        // Setting the left and right inset for cells
         let leftRightInset = self.view.frame.size.width / 57.0
         return UIEdgeInsetsMake(0, leftRightInset, 0, leftRightInset)
     }
     
-    //MARK: - Fetched Results Controller Delegate
+    // MARK: - Fetched Results Controller Delegate
     
     func controllerWillChangeContent(controller: NSFetchedResultsController) {
         changes = []
@@ -192,20 +196,20 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
             }
             }, completion: { completed -> Void in
                 dispatch_async(dispatch_get_main_queue(), { () -> Void in
-                    //self.newCollectionButton.enabled = true
+                    
                 })
         })
     }
     
-    //MARK: - Actions
+    // MARK: - Actions
     
     func deletePhoto(sender: UIAlertAction!) -> Void {
         let index = currentIndex
         
         let photo = self.fetchedResultsController.objectAtIndexPath(index!) as! Photo
-        //Clear the image from cache
+        // Clear the image from cache
         FlickrClient.Caches.imageCache.clearImage(photo.photoID)
-        //Delete the image from album
+        // Delete the image from album
         self.sharedContext.deleteObject(photo)
         CoreDataStackManager.sharedInstance().saveContext()
         
@@ -217,17 +221,17 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         self.newCollectionButton.enabled = false
         if let photos = self.fetchedResultsController.fetchedObjects as? [Photo] {
             for photo in photos {
-                //Clear all images from cache
+                // Clear all images from cache
                 FlickrClient.Caches.imageCache.clearImage(photo.photoID)
-                //Delete all images from album
+                // Delete all images from album
                 self.sharedContext.deleteObject(photo)
             }
         }
-        //Get new set of images for album
+        // Get new set of images for album
         getImage()
     }
     
-    //MARK: - Configure Cell
+    // MARK: - Configure Cell
     
     func configureCell(cell: PhotoCollectionViewCell, photo: Photo, indexPath: NSIndexPath) {
         var image = UIImage()
@@ -235,25 +239,22 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         if let localImage = photo.image {
             image = localImage
         } else {
-            //Else download the image
-            let task = FlickrClient.sharedInstance().taskForImage(photo.photoURL, completionHandler: { (imageData, error) -> Void in
+            // Else download the image
+            _ = FlickrClient.sharedInstance().taskForImage(photo.photoURL, completionHandler: { (imageData, error) -> Void in
                 if let data = imageData {
-                    //cell.activityIndicator.hidden = false
-                    //cell.activityIndicator.startAnimating()
-                    
-                    //Create the image
+                    // Create the image
                     let image = UIImage(data: data)
                         
-                    //Update the model, so that image gets cached
+                    // Update the model, so that image gets cached
                     photo.image = image
                     
                     dispatch_async(dispatch_get_main_queue()) { () -> Void in
                         cell.activityIndicator.stopAnimating()
-                        //cell.activityIndicator.hidden = true
+                        
                         cell.cellImage.image = image
                         self.numberOfImagesLoaded = self.numberOfImagesLoaded + 1
                         
-                        var numberOfImages = (self.fetchedResultsController.sections![0] as! NSFetchedResultsSectionInfo).numberOfObjects
+                        let numberOfImages = (self.fetchedResultsController.sections![0]).numberOfObjects
                         
                         if self.numberOfImagesLoaded == numberOfImages {
                             self.newCollectionButton.enabled = true
@@ -265,6 +266,5 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDelegate, UICo
         }
         
         cell.cellImage.image = image
-        self.collectionView.reloadItemsAtIndexPaths([indexPath])
     }
 }
